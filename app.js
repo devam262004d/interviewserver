@@ -7,7 +7,7 @@ const http = require("http");
 const cookieParser = require("cookie-parser");
 require("dotenv").config();
 const session = require("express-session");
-const authRouter = require('./Auth/authRouter');
+const authRouter = require('./auth/authRouter');
 
 
 connectDb();
