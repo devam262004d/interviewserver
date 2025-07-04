@@ -9,10 +9,10 @@ exports.signUp = async (req, res) => {
     try {
         console.log("this is signup controllercode", req.body);
 
-        const { fullName, email, password, phoneNumber, accountType ,gender} = req.body;
+        const { fullName, email, password, phoneNumber, accountType, gender } = req.body;
         console.log(accountType);
         if (!fullName || !email || !password || !phoneNumber || !accountType) {
-            console.log("this is signupdbdcbidcefcbfic" )
+            console.log("this is signupdbdcbidcefcbfic")
             return res.status(400).json({ message: "All fields are requiered" });
         }
 
@@ -28,12 +28,12 @@ exports.signUp = async (req, res) => {
             email,
             password: hashedPassword,
             phone: phoneNumber,
-            accoutnType:accountType,
-            gender:gender,
+            accoutnType: accountType,
+            gender: gender,
         });
 
         console.log("this is user", user)
-console.log(user)
+        console.log(user)
         const userData = cleanObject(user);
         const newUser = new User(userData);
         await newUser.save();
@@ -61,18 +61,18 @@ exports.login = async (req, res) => {
             return res.status(404).json({ message: "user not found" });
             ;
         }
-   console.log("this is user", user)
+        console.log("this is user", user)
 
         const isMatch = await bCrypt.compare(password, user.password);
         if (!isMatch) {
             return res.status(400).json({ message: "invalid password" });
         };
 
-console.log(user.accoutnType)
-        const token = jwt.sign({ email: user.email, id: user._id , accountType: user.accoutnType}, "helojwt", {
+        console.log(user.accoutnType)
+        const token = jwt.sign({ email: user.email, id: user._id, accountType: user.accoutnType }, "helojwt", {
             expiresIn: "1d"
         });
-
+       console.log(token);
         res.cookie("token", token, {
             httpOnly: true,
             maxAge: 1000 * 60 * 60 * 24,
@@ -86,12 +86,12 @@ console.log(user.accoutnType)
     }
 }
 
-exports.logout = (req, res)=>{
-  res.clearCookie("token", {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: "Lax", 
-  });
-  res.status(200).json({ message: "Logged out successfully" });
+exports.logout = (req, res) => {
+    res.clearCookie("token", {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: "Lax",
+    });
+    res.status(200).json({ message: "Logged out successfully" });
 
 }
