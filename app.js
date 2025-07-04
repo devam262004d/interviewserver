@@ -9,6 +9,7 @@ require("dotenv").config();
 const session = require("express-session");
 const authRouter = require('./auth/authRouter');
 const interviewJob = require('./interviewJob/interviewJobRouter');
+const passport = require("passport");
 
 
 connectDb();
@@ -43,6 +44,11 @@ const io = new Server(server, {
 
 app.use('/api/auth', authRouter); // ✅ FIXED this line
 app.use('/api/interviewJob', interviewJob);
+
+require("./passport/googleStrategy")(passport); // Load your strategy config
+app.use(passport.initialize());
+app.use(passport.session());
+
 
 const activeRooms = new Map();
 
