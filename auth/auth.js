@@ -47,49 +47,65 @@ exports.signUp = async (req, res) => {
 
 
 exports.login = async (req, res) => {
-    try {
-        console.log("this is login controlercode");
+  try {
+    console.log("🔐 Login controller triggered");
 
-        const { email, password } = req.body;
-        console.log(req.body)
-        if (!email || !password) {
-            return res.status(400).json({ message: "all fields are required" });
-        };
+    const { email, password } = req.body;
 
-        const user = await User.findOne({ email });
-        if (!user) {
-            return res.status(404).json({ message: "user not found" });
-            ;
-        }
-        console.log("this is user", user)
-
-        const isMatch = await bCrypt.compare(password, user.password);
-        if (!isMatch) {
-            return res.status(400).json({ message: "invalid password" });
-        };
-
-        console.log(user.accoutnType)
-        const token = jwt.sign({ email: user.email, id: user._id, accountType: user.accoutnType }, "helojwt", {
-            expiresIn: "1d"
-        });
-        console.log(token);
-        // res.cookie("token", token, {
-        //     httpOnly: true,
-        //     maxAge: 1000 * 60 * 60 * 24,
-        //     secure: false,
-        //     sameSite: "lax",
-
-        // }).json({ message: "Login successful", user: { email: user.email } });
-        res.cookie("token", token, {
-            httpOnly: true,
-            sameSite: "lax",
-            secure: false
-        }).send("Cookie set");
-
-    } catch (error) {
-        res.status(500).json({ message: error.message });
+    // ✅ Validate input
+    if (!email || !password) {
+      return res.status(400).json({ message: "All fields are required" });
     }
-}
+
+    // ✅ Check if user exists
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // ✅ Validate password
+    const isMatch = await bCrypt.compare(password, user.password);
+    if (!isMatch) {
+      return res.status(400).json({ message: "Invalid password" });
+    }
+
+    // ✅ Generate token
+    const token = jwt.sign(
+      {
+        email: user.email,
+        id: user._id,
+        accountType: user.accoutnType, // Make sure this field name is correct in your schema
+      },
+      process.env.JWT_SECRET || "helojwt",
+      {
+        expiresIn: "1d",
+      }
+    );
+
+    console.log("✅ Token created:", token);
+
+    // ✅ Set cookie
+    res.cookie("token", token, {
+      httpOnly: true,
+      maxAge: 1000 * 60 * 60 * 24, // 1 day
+      secure: false,               // false for localhost (change to true in production)
+      sameSite: "lax",             // lax works for cross-origin form fetch with credentials
+    });
+
+    // ✅ Send response
+    return res.status(200).json({
+      message: "Login successful",
+      user: {
+        email: user.email,
+        id: user._id,
+        accountType: user.accoutnType,
+      },
+    });
+  } catch (error) {
+    console.error("❌ Login error:", error.message);
+    return res.status(500).json({ message: "Internal Server Error" });
+  }
+};
 
 exports.logout = (req, res) => {
     res.clearCookie("token", {
