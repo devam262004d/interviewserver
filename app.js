@@ -12,6 +12,8 @@ const passport = require("passport");
 
 connectDb();
 
+
+app.set("trust proxy", 1);
 // ✅ CORS setup
 app.use(cors({
   origin: 'http://localhost:3000', // frontend origin
