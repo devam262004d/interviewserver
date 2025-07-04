@@ -76,7 +76,7 @@ console.log(user.accoutnType)
         res.cookie("token", token, {
             httpOnly: true,
             maxAge: 1000 * 60 * 60 * 24,
-            secure: process.env.NODE_ENV === "production",
+            secure: false,
             sameSite: "strict",
 
         }).json({ message: "Login successful", user: { email: user.email } });
