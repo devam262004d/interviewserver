@@ -7,6 +7,8 @@ const http = require("http");
 const cookieParser = require("cookie-parser");
 require("dotenv").config();
 const session = require("express-session");
+const authRouter = require('./Auth/authRouter');
+
 
 connectDb();
 app.use(cors({
@@ -17,6 +19,19 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
+
+app.use(
+  session({
+    secret: "your_secret_key",
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      secure: false, // set to true with HTTPS
+      httpOnly: true,
+    }
+  })
+);
+
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
@@ -24,6 +39,8 @@ const io = new Server(server, {
     methods: ["GET", "POST"]
   }
 });
+
+app.use('/api/auth', authRouter); // ✅ FIXED this line
 
 const activeRooms = new Map();
 
@@ -129,5 +146,5 @@ app.get('/', (req, res) => {
 
 
 server.listen(5000, () => {
-  console.log(`🚀 Server is running on http://localhost:5000`);
+  console.log(`🚀 Server is running on http://localhost:4000`);
 });
