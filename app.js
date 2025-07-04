@@ -152,6 +152,10 @@ app.get('/', (req, res) => {
   res.send('Hello from Express!');
 });
 
+app.get('/helo', (req, res) => {
+  res.send('Hello cdcdcdcdcdcdcdcdcdcdcdcdcdfrom Express!');
+});
+
 
 server.listen(5000, () => {
   console.log(`🚀 Server is running on http://localhost:4000`);
