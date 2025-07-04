@@ -39,6 +39,8 @@ const io = new Server(server, {
   }
 });
 
+
+
 const activeRooms = new Map();
 
 io.on("connection", (socket) => {
@@ -118,6 +120,14 @@ io.on("connection", (socket) => {
 // ✅ API routes
 app.use('/api/auth', authRouter);
 app.use('/api/interviewJob', interviewJob);
+
+app.get("/test-cookie", (req, res) => {
+  res.cookie("token", "test-123", {
+    httpOnly: true,
+    sameSite: "lax",
+    secure: false
+  }).send("Cookie set");
+});
 
 // ✅ Test route
 app.get('/', (req, res) => {
