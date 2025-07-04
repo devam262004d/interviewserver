@@ -77,7 +77,7 @@ console.log(user.accoutnType)
             httpOnly: true,
             maxAge: 1000 * 60 * 60 * 24,
             secure: false,
-            sameSite: "strict",
+            sameSite: "lax",
 
         }).json({ message: "Login successful", user: { email: user.email } });
 

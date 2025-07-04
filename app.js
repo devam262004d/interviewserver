@@ -6,49 +6,36 @@ const { Server } = require("socket.io");
 const http = require("http");
 const cookieParser = require("cookie-parser");
 require("dotenv").config();
-const session = require("express-session");
 const authRouter = require('./auth/authRouter');
 const interviewJob = require('./interviewJob/interviewJobRouter');
 const passport = require("passport");
 
-
 connectDb();
+
+// ✅ CORS setup
 app.use(cors({
-  origin: 'http://localhost:3000',
-  credentials: true,
+  origin: 'http://localhost:3000', // frontend origin
+  credentials: true,               // allow cookies
 }));
+
+// ✅ Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
-
-app.use(
-  session({
-    secret: "your_secret_key",
-    resave: false,
-    saveUninitialized: false,
-    cookie: {
-      secure: false, 
-      httpOnly: true,
-    }
-  })
-);
+// ✅ Passport setup (optional: if using Google OAuth)
+require("./passport/googleStrategy")(passport);
+app.use(passport.initialize());
 
 const server = http.createServer(app);
+
+// ✅ Socket.io
 const io = new Server(server, {
   cors: {
-    origin: "*",
+    origin: "*", // okay for dev sockets
     methods: ["GET", "POST"]
   }
 });
-
-app.use('/api/auth', authRouter); // ✅ FIXED this line
-app.use('/api/interviewJob', interviewJob);
-
-require("./passport/googleStrategy")(passport); // Load your strategy config
-app.use(passport.initialize());
-app.use(passport.session());
-
 
 const activeRooms = new Map();
 
@@ -59,28 +46,18 @@ io.on("connection", (socket) => {
 
   socket.on("check-password", async ({ roomId, password }) => {
     const job = await InterviewJobs.findOne({ interviewCode: roomId });
-    if (!job) {
-      socket.emit("error", { message: "Job not found" });
-      return;
-    }
-    if (job.password !== password) {
-      socket.emit("error", { message: "Password is incorrect" });
-      return;
-    }
+    if (!job) return socket.emit("error", { message: "Job not found" });
+    if (job.password !== password)
+      return socket.emit("error", { message: "Password is incorrect" });
     socket.emit("password-is-correct", { roomId });
-  })
-
-
+  });
 
   socket.on("join-room", async ({ roomId, role }) => {
-    console.log("join to room")
+    console.log("join to room");
     let participants = activeRooms.get(roomId) || [];
     console.log("participants", participants);
 
-    if (participants.includes(socket.id)) {
-      console.log("🚫 Already joined:", socket.id);
-      return;
-    }
+    if (participants.includes(socket.id)) return;
 
     if (participants.length === 0) {
       if (role !== "interviewer") {
@@ -90,33 +67,27 @@ io.on("connection", (socket) => {
         participants.push(socket.id);
         activeRooms.set(roomId, participants);
         console.log("✅ Interviewer joined:", socket.id);
-        console.log(activeRooms)
       }
-    } else if (participants.length == 1) {
+    } else if (participants.length === 1) {
       if (role !== "candidate") {
-        socket.emit("error", { message: "only candidate can join this time" });
+        socket.emit("error", { message: "Only candidate can join this time" });
       } else {
         socket.join(roomId);
         participants.push(socket.id);
         activeRooms.set(roomId, participants);
         console.log("✅ Candidate joined:", socket.id);
-         socket.to(roomId).emit("user-joined");
-        console.log(activeRooms)
+        socket.to(roomId).emit("user-joined");
       }
     } else {
-      if (participants.length == 2) {
-        socket.emit("error", { message: "Room is full" });
-      }
+      socket.emit("error", { message: "Room is full" });
     }
   });
 
   socket.on("offer", ({ offer, roomId }) => {
-    console.log("offer created ")
     socket.to(roomId).emit("offer", { offer });
   });
 
   socket.on("answer", ({ answer, roomId }) => {
-    console.log("answer created ");
     socket.to(roomId).emit("answer", { answer });
   });
 
@@ -124,21 +95,17 @@ io.on("connection", (socket) => {
     socket.to(roomId).emit("ice-candidate", { candidate });
   });
 
-  // ✅ Disconnect cleanup
   socket.on("disconnect", () => {
     console.log("❌ User disconnected:", socket.id);
-
     for (const [roomId, participants] of activeRooms.entries()) {
       const index = participants.indexOf(socket.id);
       if (index !== -1) {
         participants.splice(index, 1);
-        console.log(`🧹 Removed ${socket.id} from room ${roomId}`);
-
         if (participants.length === 0) {
           activeRooms.delete(roomId);
           console.log(`🗑️ Deleted empty room ${roomId}`);
         } else {
-          activeRooms.set(roomId, participants); 
+          activeRooms.set(roomId, participants);
         }
         break;
       }
@@ -146,17 +113,15 @@ io.on("connection", (socket) => {
   });
 });
 
+// ✅ API routes
+app.use('/api/auth', authRouter);
+app.use('/api/interviewJob', interviewJob);
 
-
+// ✅ Test route
 app.get('/', (req, res) => {
   res.send('Hello from Express!');
 });
 
-app.get('/helo', (req, res) => {
-  res.send('Hello cdcdcdcdcdcdcdcdcdcdcdcdcdfrom Express!');
-});
-
-
 server.listen(5000, () => {
-  console.log(`🚀 Server is running on http://localhost:4000`);
+  console.log(`🚀 Server is running on http://localhost:5000`);
 });
