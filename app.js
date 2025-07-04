@@ -8,6 +8,7 @@ const cookieParser = require("cookie-parser");
 require("dotenv").config();
 const session = require("express-session");
 const authRouter = require('./auth/authRouter');
+const interviewJob = require('./interviewJob/interviewJobRouter');
 
 
 connectDb();
@@ -41,6 +42,7 @@ const io = new Server(server, {
 });
 
 app.use('/api/auth', authRouter); // ✅ FIXED this line
+app.use('/api/interviewJob', interviewJob);
 
 const activeRooms = new Map();
 
