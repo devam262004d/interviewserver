@@ -6,42 +6,42 @@ const jwt = require("jsonwebtoken");
 
 
 exports.signUp = async (req, res) => {
-    try {
-        console.log("this is signup controllercode", req.body);
+  try {
+    console.log("this is signup controllercode", req.body);
 
-        const { fullName, email, password, phoneNumber, accountType, gender } = req.body;
-        console.log(accountType);
-        if (!fullName || !email || !password || !phoneNumber || !accountType) {
-            console.log("this is signupdbdcbidcefcbfic")
-            return res.status(400).json({ message: "All fields are requiered" });
-        }
-
-        const existingUser = await User.findOne({ email });
-        if (existingUser) {
-            return res.status(400).json({ message: "User already exists" });
-        }
-
-        const hashedPassword = await bCrypt.hash(password, 10);
-
-        const user = ({
-            userName: fullName,
-            email,
-            password: hashedPassword,
-            phone: phoneNumber,
-            accoutnType: accountType,
-            gender: gender,
-        });
-
-        console.log("this is user", user)
-        console.log(user)
-        const userData = cleanObject(user);
-        const newUser = new User(userData);
-        await newUser.save();
-        res.status(201).json({ message: "User created successfully" });
-
-    } catch (error) {
-        res.status(500).json({ message: error.message });
+    const { fullName, email, password, phoneNumber, accountType, gender } = req.body;
+    console.log(accountType);
+    if (!fullName || !email || !password || !phoneNumber || !accountType) {
+      console.log("this is signupdbdcbidcefcbfic")
+      return res.status(400).json({ message: "All fields are requiered" });
     }
+
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res.status(400).json({ message: "User already exists" });
+    }
+
+    const hashedPassword = await bCrypt.hash(password, 10);
+
+    const user = ({
+      userName: fullName,
+      email,
+      password: hashedPassword,
+      phone: phoneNumber,
+      accoutnType: accountType,
+      gender: gender,
+    });
+
+    console.log("this is user", user)
+    console.log(user)
+    const userData = cleanObject(user);
+    const newUser = new User(userData);
+    await newUser.save();
+    res.status(201).json({ message: "User created successfully" });
+
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
 }
 
 
@@ -87,9 +87,9 @@ exports.login = async (req, res) => {
     // ✅ Set cookie
     res.cookie("token", token, {
       httpOnly: true,
-      maxAge: 1000 * 60 * 60 * 24, 
-      secure: false,               
-      sameSite: "lax",             
+      maxAge: 1000 * 60 * 60 * 24,
+      sameSite: "none",
+      secure: true
     });
 
     // ✅ Send response
@@ -108,11 +108,11 @@ exports.login = async (req, res) => {
 };
 
 exports.logout = (req, res) => {
-    res.clearCookie("token", {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: "Lax",
-    });
-    res.status(200).json({ message: "Logged out successfully" });
+  res.clearCookie("token", {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: "Lax",
+  });
+  res.status(200).json({ message: "Logged out successfully" });
 
 }

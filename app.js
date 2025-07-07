@@ -45,7 +45,7 @@ const server = http.createServer(app);
 // ✅ Socket.io
 const io = new Server(server, {
   cors: {
-    origin: "*", // okay for dev sockets
+    origin: "*", 
     methods: ["GET", "POST"]
   }
 });
