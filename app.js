@@ -7,7 +7,8 @@ const http = require("http");
 const cookieParser = require("cookie-parser");
 require("dotenv").config();
 const authRouter = require('./auth/authRouter');
-const interviewJob = require('./interviewJob/interviewJob');
+const interviewJob = require('./interviewJob/interviewJobRouter');
+const Inter = require("./interviewJob/interviewJob")
 const passport = require("passport");
 
 connectDb();
@@ -60,7 +61,7 @@ io.on("connection", (socket) => {
   console.log("📱 Device info:", userAgent);
 
   socket.on("check-password", async ({ roomId, password }) => {
-    const job = await InterviewJobs.findOne({ interviewCode: roomId });
+    const job = await Inter.findOne({ interviewCode: roomId });
     if (!job) return socket.emit("error", { message: "Job not found" });
     if (job.password !== password)
       return socket.emit("error", { message: "Password is incorrect" });
