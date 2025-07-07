@@ -7,7 +7,7 @@ const http = require("http");
 const cookieParser = require("cookie-parser");
 require("dotenv").config();
 const authRouter = require('./auth/authRouter');
-const interviewJob = require('./interviewJob/interviewJobRouter');
+const interviewJob = require('./interviewJob/interviewJob');
 const passport = require("passport");
 
 connectDb();
