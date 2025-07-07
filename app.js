@@ -15,9 +15,20 @@ connectDb();
 
 app.set("trust proxy", 1);
 // ✅ CORS setup
+const allowedOrigins = [
+  "http://localhost:3000",
+  "https://fr-git-main-vaghanidevam262004s-projects.vercel.app"
+];
+
 app.use(cors({
-  origin: 'http://localhost:3000', // frontend origin
-  credentials: true,               // allow cookies
+  origin: function (origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error("Not allowed by CORS"));
+    }
+  },
+  credentials: true
 }));
 
 // ✅ Middleware

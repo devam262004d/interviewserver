@@ -87,9 +87,9 @@ exports.login = async (req, res) => {
     // ✅ Set cookie
     res.cookie("token", token, {
       httpOnly: true,
-      maxAge: 1000 * 60 * 60 * 24, // 1 day
-      secure: false,               // false for localhost (change to true in production)
-      sameSite: "lax",             // lax works for cross-origin form fetch with credentials
+      maxAge: 1000 * 60 * 60 * 24, 
+      secure: false,               
+      sameSite: "lax",             
     });
 
     // ✅ Send response
