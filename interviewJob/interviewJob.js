@@ -52,15 +52,21 @@ const interviewJobSchema = new mongoose.Schema({
         type: Date,
         default: Date.now,
     },
-    InterviewType:{
+    InterviewType: {
         type: String,
-        enum:["Technical", "HR", "Managerial"],
-        required:true
+        enum: ["Technical", "HR", "Managerial"],
+        required: true
     },
-    status:{
-        type:String,
-        enum:["live", "closed", "draft"],
-        default:"draft"
+    status: {
+        type: String,
+        enum: ["live", "closed", "draft"],
+        default: "draft"
+    },
+    note: [{
+        type: Object,
+    }],
+    resumeText:{
+        type:String
     }
 });
 

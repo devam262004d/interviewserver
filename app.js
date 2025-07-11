@@ -46,7 +46,7 @@ const server = http.createServer(app);
 // ✅ Socket.io
 const io = new Server(server, {
   cors: {
-    origin: "*", 
+    origin: "*",
     methods: ["GET", "POST"]
   }
 });
@@ -60,9 +60,14 @@ io.on("connection", (socket) => {
   const userAgent = socket.handshake.headers["user-agent"];
   console.log("📱 Device info:", userAgent);
 
-  socket.on("check-password", async ({ roomId, password }) => {
+  socket.on("check-password", async ({ roomId, password, role }) => {
     const job = await Inter.findOne({ interviewCode: roomId });
     if (!job) return socket.emit("error", { message: "Job not found" });
+    let participants = activeRooms.get(roomId) || [];
+    console.log(role)
+    if ((role === "Candidate" && participants.length === 0)) {
+      return socket.emit("error", { message: "Please wait for the interviewer to join" });
+    }
     if (job.password !== password)
       return socket.emit("error", { message: "Password is incorrect" });
     socket.emit("password-is-correct", { roomId });
@@ -76,8 +81,8 @@ io.on("connection", (socket) => {
     if (participants.includes(socket.id)) return;
 
     if (participants.length === 0) {
-      if (role !== "interviewer") {
-        socket.emit("error", { message: "Please wait for the interviewer to join" });
+      if (role !== "Interviewer") {
+        socket.emit("error", { message: "Please wait for the interviewer to joinbhhhiih" });
       } else {
         socket.join(roomId);
         participants.push(socket.id);
@@ -85,7 +90,7 @@ io.on("connection", (socket) => {
         console.log("✅ Interviewer joined:", socket.id);
       }
     } else if (participants.length === 1) {
-      if (role !== "candidate") {
+      if (role !== "Candidate") {
         socket.emit("error", { message: "Only candidate can join this time" });
       } else {
         socket.join(roomId);
@@ -99,6 +104,21 @@ io.on("connection", (socket) => {
     }
   });
 
+
+  socket.on("note-submitted", async ({ note, roomId }) => {
+    const job = await Inter.findOne({ interviewCode: roomId });
+    if (!job) {
+      return socket.emit("error", { message: "Job not found" });
+    }
+    job.note.push({
+      note: note,
+      userId: socket.id,
+      createdAt: new Date()
+    });
+    job.save();
+    socket.emit("note-saved", { message: "Note saved successfully!" });
+  })
+
   socket.on("offer", ({ offer, roomId }) => {
     socket.to(roomId).emit("offer", { offer });
   });
@@ -111,22 +131,41 @@ io.on("connection", (socket) => {
     socket.to(roomId).emit("ice-candidate", { candidate });
   });
 
-  socket.on("disconnect", () => {
-    console.log("❌ User disconnected:", socket.id);
-    for (const [roomId, participants] of activeRooms.entries()) {
-      const index = participants.indexOf(socket.id);
-      if (index !== -1) {
-        participants.splice(index, 1);
-        if (participants.length === 0) {
-          activeRooms.delete(roomId);
-          console.log(`🗑️ Deleted empty room ${roomId}`);
-        } else {
-          activeRooms.set(roomId, participants);
-        }
-        break;
+
+socket.on("disconnect", () => {
+  console.log("❌ User disconnected:", socket.id);
+
+  for (const [roomId, participants] of activeRooms.entries()) {
+    const index = participants.indexOf(socket.id);
+
+    if (index !== -1) {
+      let role = "unknown";
+      if (index === 0) role = "interviewer";
+      else if (index === 1) role = "candidate";
+
+      // ✅ Emit to other user in the room
+      socket.to(roomId).emit("userDisconnected", {
+        message: `User disconnected: ${role}`,
+        role,
+        socketId: socket.id,
+      });
+
+      participants.splice(index, 1);
+
+      if (participants.length === 0) {
+        activeRooms.delete(roomId);
+        console.log(`🗑️ Deleted empty room ${roomId}`);
+      } else {
+        activeRooms.set(roomId, participants);
       }
+
+      break;
     }
-  });
+  }
+});
+
+
+
 });
 
 // ✅ API routes
