@@ -2,6 +2,7 @@ const InterviewJob = require('../interviewJob/interviewJob');
 const mailSender = require("../utility/mailSender");
 const pdfParse = require("pdf-parse");
 const analyzeResume = require("../utility/resumeAnalyze");
+const axios = require("axios");
 
 exports.createInterviewJob = async (req, res) => {
   try {
@@ -96,9 +97,9 @@ exports.updateResumeText = async (req, res) => {
     console.log("this is updateResumeText function");
     const { id, password } = req.body;
     console.log("id", id);
-    if(!id){
+    if (!id) {
       return res.status(404).json({ error: "Please enter the interview Id" });
-    }else if(!password){
+    } else if (!password) {
       return res.status(404).json({ error: "Please enter the interview Password" });
     }
     const job = await InterviewJob.findOne({ interviewCode: id, password: password });
@@ -115,7 +116,7 @@ exports.updateResumeText = async (req, res) => {
     return res.status(200).json({
       message: "Resume text updated successfully",
       resumeText: data.text,
-      success:true
+      success: true
     })
   } catch (error) {
     return res.status(500).json({
@@ -134,9 +135,10 @@ exports.analyzeresume = async (req, res) => {
 
     const job = await InterviewJob.findOne({ interviewCode: id });
     if (!job) {
-      return res.status(404).json({ error: "Job not found or invalid ID",
+      return res.status(404).json({
+        error: "Job not found or invalid ID",
         success: false
-       });
+      });
     }
 
     const textFile = job.resumeText;
@@ -148,12 +150,33 @@ exports.analyzeresume = async (req, res) => {
     const analysis = await analyzeResume(textFile, interviewType);
     console.log("Analysis:", analysis);
 
-    return res.status(200).json({ analysis }); 
+    return res.status(200).json({ analysis });
   } catch (error) {
     console.error("Error in analyzeResume:", error);
     return res.status(500).json({ message: error.message });
   }
 };
+
+
+exports.audioToText = async (req, res) => {
+  try {
+    console.log("this is audio to text file ");
+    console.log("Audio uploaded:", req.file);
+    const audioBuffer = req.file.buffer;
+    const response = await axios.post("https://api.deepgram.com/v1/listen", audioBuffer, {
+      headers: {
+        "Content-Type": "audio/webm",
+        Authorization: `Token ${process.env.DEEPGRAM_API_KEY}`,
+      },
+    })
+    const transcript = response.data.results.channels[0].alternatives[0].transcript;
+    console.log("Transcript:", transcript);
+
+  } catch (error) {
+    console.error("Error in analyzeResume:", error);
+    return res.status(500).json({ message: error.message });
+  }
+}
 
 
 function generateInterviewEmail(interviewCode, password, interviewDate = "Not specified") {
