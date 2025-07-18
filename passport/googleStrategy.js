@@ -23,7 +23,7 @@ module.exports = function (passport) {
               email: profile.emails[0].value,
               photo: profile.photos[0].value,
               signupType: "google",
-              accountType: "user", // Optional default
+              accountType: "user", 
             });
             await user.save();
           }

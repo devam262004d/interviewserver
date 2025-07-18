@@ -60,8 +60,13 @@ io.on("connection", (socket) => {
   const userAgent = socket.handshake.headers["user-agent"];
   console.log("📱 Device info:", userAgent);
 
-  socket.on("check-password", async ({ roomId, password, role }) => {
+  socket.on("check-password", async ({ roomId, password, role, file }) => {
     const job = await Inter.findOne({ interviewCode: roomId });
+    console.log(file)
+    if(job.interviewStatus == "completed"){
+      socket.emit("error", { message: "This interview has already been completed." });
+      return;
+    }
     if (!job) return socket.emit("error", { message: "Job not found" });
     let participants = activeRooms.get(roomId) || [];
     console.log(role)
@@ -73,8 +78,10 @@ io.on("connection", (socket) => {
     socket.emit("password-is-correct", { roomId });
   });
 
-  socket.on("join-room", async ({ roomId, role }) => {
+  socket.on("join-room", async ({ roomId, role , userId}) => {
     console.log("join to room");
+    const job = await Inter.findOne({interviewCode:roomId});
+
     let participants = activeRooms.get(roomId) || [];
     console.log("participants", participants);
 
@@ -82,12 +89,14 @@ io.on("connection", (socket) => {
 
     if (participants.length === 0) {
       if (role !== "Interviewer") {
-        socket.emit("error", { message: "Please wait for the interviewer to joinbhhhiih" });
+        socket.emit("error", { message: "Please wait for the interviewer to join" });
       } else {
         socket.join(roomId);
         participants.push(socket.id);
         activeRooms.set(roomId, participants);
         console.log("✅ Interviewer joined:", socket.id);
+        job.interviewerJoined = true;
+        job.interviewStatus = "in-progress";
       }
     } else if (participants.length === 1) {
       if (role !== "Candidate") {
@@ -98,10 +107,13 @@ io.on("connection", (socket) => {
         activeRooms.set(roomId, participants);
         console.log("✅ Candidate joined:", socket.id);
         socket.to(roomId).emit("user-joined");
+        job.candidateJoined = true;
+        job.candidateId =userId;
       }
     } else {
       socket.emit("error", { message: "Room is full" });
     }
+    job.save();
   });
 
 
@@ -132,37 +144,42 @@ io.on("connection", (socket) => {
   });
 
 
-socket.on("disconnect", () => {
-  console.log("❌ User disconnected:", socket.id);
+  socket.on("end-room", async(roomId)=>{
+    console.log("end room");
+    // await Inter.findOneAndUpdate({interviewCode:roomId}, {interviewStatus:"completed"});
+  });
 
-  for (const [roomId, participants] of activeRooms.entries()) {
-    const index = participants.indexOf(socket.id);
+  socket.on("disconnect", () => {
+    console.log("❌ User disconnected:", socket.id);
 
-    if (index !== -1) {
-      let role = "unknown";
-      if (index === 0) role = "interviewer";
-      else if (index === 1) role = "candidate";
+    for (const [roomId, participants] of activeRooms.entries()) {
+      const index = participants.indexOf(socket.id);
 
-      // ✅ Emit to other user in the room
-      socket.to(roomId).emit("userDisconnected", {
-        message: `User disconnected: ${role}`,
-        role,
-        socketId: socket.id,
-      });
+      if (index !== -1) {
+        let role = "unknown";
+        if (index === 0) role = "interviewer";
+        else if (index === 1) role = "candidate";
 
-      participants.splice(index, 1);
+        // ✅ Emit to other user in the room
+        socket.to(roomId).emit("userDisconnected", {
+          message: `User disconnected: ${role}`,
+          role,
+          socketId: socket.id,
+        });
 
-      if (participants.length === 0) {
-        activeRooms.delete(roomId);
-        console.log(`🗑️ Deleted empty room ${roomId}`);
-      } else {
-        activeRooms.set(roomId, participants);
+        participants.splice(index, 1);
+
+        if (participants.length === 0) {
+          activeRooms.delete(roomId);
+          console.log(`🗑️ Deleted empty room ${roomId}`);
+        } else {
+          activeRooms.set(roomId, participants);
+        }
+
+        break;
       }
-
-      break;
     }
-  }
-});
+  });
 
 
 

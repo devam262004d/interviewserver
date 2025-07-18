@@ -30,7 +30,6 @@ note: do not add like any comment or extra , in this or  okay., project array in
     console.log(response.choices[0]?.message?.content);
     const result = extractJsonFromResponse(response.choices[0]?.message?.content)
     return result || "No analysis found.";
-
 }
 
 
